@@ -392,7 +392,7 @@ function renderPlayers() {
     ];
     const shown = sortableTable(table, cols, rows, sort, onSort, r => ({ class: r.owner === meHandle ? "me" : null }));
     limitRows(table, shown.length);
-    $("#players-note").textContent = `Season totals through Week ${WEEKS.at(-1)}, half PPR. Rank is by total points; PPG rank by points per game. Owner is the Go Big or Go Home roster.`;
+    $("#players-note").textContent = `${state.pos} season totals through Week ${WEEKS.at(-1)}, ${P.scoring || "half PPR"} scoring. Rank is by total points; PPG rank by points per game. Owner is the Go Big or Go Home roster.`;
   } else {
     const idx = Object.fromEntries(P.cols.map((c, i) => [c.group + ":" + c.name, i + 3]));
     rows = P.weekly.filter(r => (state.pWeek === "all" || r[0] === +state.pWeek) && (!q || r[2].toLowerCase().includes(q)));
@@ -410,7 +410,7 @@ function renderPlayers() {
     groupRow = el("tr", { class: "group-row" }, cols.map(c => el("th", { class: c.l ? "l" : "" }, c.group || "")));
     $("thead", table).prepend(collapseGroups(groupRow));
     limitRows(table, shown.length);
-    $("#players-note").textContent = "Weekly box scores from FantasyPros, half PPR. Only players who played that week are listed.";
+    $("#players-note").textContent = `Weekly ${state.pos} box scores from FantasyPros, ${P.scoring || "half PPR"} scoring. Only players who played that week are listed.`;
   }
 }
 

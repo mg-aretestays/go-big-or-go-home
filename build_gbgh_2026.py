@@ -27,6 +27,10 @@ SOURCE_SHEET_FILE = Path(__file__).with_name(".source_sheet_url")
 OUT = Path(__file__).with_name(f"Go Big or Go Home {SEASON}.xlsx")
 FP_CACHE = Path(__file__).with_name(".fp_cache") / SEASON
 FP_POSITIONS = ("QB", "RB", "WR", "TE")
+# League scoring: 0.5 per catch, plus a 0.5 TE reception bonus, so TEs score as full PPR.
+FP_SCORING = {"QB": "HALF", "RB": "HALF", "WR": "HALF", "TE": "PPR"}
+FP_SCORING_LABEL = {"HALF": "Half PPR", "PPR": "PPR"}
+FP_SCORING_NOTE = "Half PPR; TE full PPR"
 FP_CRAWL_DELAY = 5  # seconds, per fantasypros.com/robots.txt
 FP_REFRESH_WEEKS = 2  # re-download the most recent weeks to pick up stat corrections
 
@@ -397,12 +401,13 @@ class _StatsTable(HTMLParser):
 def fp_page(pos, week, last_week):
     """Return the HTML for one position/week, using the local cache for settled weeks."""
     FP_CACHE.mkdir(parents=True, exist_ok=True)
-    path = FP_CACHE / f"{pos.lower()}_w{week:02d}.html"
+    scoring = FP_SCORING[pos]
+    path = FP_CACHE / f"{pos.lower()}_{scoring.lower()}_w{week:02d}.html"
     if path.exists() and week <= last_week - FP_REFRESH_WEEKS:
         return path.read_text(encoding="utf-8")
     time.sleep(FP_CRAWL_DELAY)
     url = (f"https://www.fantasypros.com/nfl/stats/{pos.lower()}.php"
-           f"?year={SEASON}&range=week&week={week}&scoring=HALF")
+           f"?year={SEASON}&range=week&week={week}&scoring={scoring}")
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (league stats sheet)"})
     for attempt in range(3):
         try:
@@ -413,8 +418,10 @@ def fp_page(pos, week, last_week):
             if attempt == 2:
                 raise
             time.sleep(FP_CRAWL_DELAY * (attempt + 2))
-    if "Half PPR" not in html[:2000]:
-        raise RuntimeError(f"{url} did not return Half PPR scoring")
+    label = FP_SCORING_LABEL[scoring]
+    page_title = re.search(r"<title>(.*?)</title>", html, re.S)
+    if not page_title or f"Fantasy Football {label} |" not in page_title.group(1):
+        raise RuntimeError(f"{url} did not return {label} scoring")
     path.write_text(html, encoding="utf-8")
     return html
 
@@ -484,12 +491,12 @@ def owner_of(owners, player, pos, team):
 
 def build_player_stats(wb, fp):
     ws = wb.create_sheet(f"Player Stats ({SEASON})")
-    ws["B2"], ws["C2"] = "Data", "FantasyPros (Half PPR)"
+    ws["B2"], ws["C2"] = "Data", f"FantasyPros ({FP_SCORING_NOTE})"
     ws["B2"].font = TITLE_FONT
     col = 2
     for pos in FP_POSITIONS:
         block = fp[pos]
-        ws.cell(4, col, f"{pos} Fantasy Scoring (0.5 PPR)").font = TITLE_FONT
+        ws.cell(4, col, f"{pos} Fantasy Scoring ({FP_SCORING_LABEL[FP_SCORING[pos]]})").font = TITLE_FONT
         head = [("", "Week"), ("", "Team"), ("", "Player")] + block["cols"]
         for j, (grp, name) in enumerate(head):
             g = ws.cell(5, col + j, grp or None)
@@ -522,7 +529,7 @@ def player_totals(fp, owners, pos):
 
 def build_player_rankings(wb, fp, owners, n_weeks):
     ws = wb.create_sheet(f"Player Rankings ({SEASON})")
-    title(ws, f"{SEASON} Fantasy Ranks – Half PPR, weeks 1-{n_weeks} (owner = Go Big or Go Home roster)")
+    title(ws, f"{SEASON} Fantasy Ranks – {FP_SCORING_NOTE}, weeks 1-{n_weeks} (owner = Go Big or Go Home roster)")
     col = 2
     for pos in FP_POSITIONS:
         totals = player_totals(fp, owners, pos)

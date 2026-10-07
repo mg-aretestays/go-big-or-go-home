@@ -8,8 +8,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from build_gbgh_2026 import (FP_POSITIONS, SEASON, load_fantasypros, league_owners,
-                             load_season, player_totals)
+from build_gbgh_2026 import (FP_POSITIONS, FP_SCORING, FP_SCORING_LABEL, SEASON, load_fantasypros,
+                             league_owners, load_season, player_totals)
 
 OUT = Path(__file__).with_name("docs") / "data.json"
 
@@ -41,6 +41,7 @@ def main():
     for pos in FP_POSITIONS:
         cols = fp[pos]["cols"]
         players[pos] = {
+            "scoring": FP_SCORING_LABEL[FP_SCORING[pos]],
             "cols": [{"group": g, "name": n} for g, n in cols],
             "weekly": [[r["week"], r["team"], r["player"]] + [r["stats"].get(c) for c in cols]
                        for r in fp[pos]["rows"]],
