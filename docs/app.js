@@ -60,7 +60,7 @@ const hideTip = () => { tip.style.display = "none"; };
 /* ---------- routing ---------- */
 function route() {
   const view = (location.hash || "#overview").slice(1);
-  const valid = ["overview", "heatmap", "weekly", "players"].includes(view) ? view : "overview";
+  const valid = ["overview", "heatmap", "weekly", "players", "guidelines"].includes(view) ? view : "overview";
   document.querySelectorAll("section.view").forEach(s => s.classList.toggle("active", s.id === "view-" + valid));
   document.querySelectorAll("nav.tabs a").forEach(a => {
     if (a.dataset.view === valid) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");

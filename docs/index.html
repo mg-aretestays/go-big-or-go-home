@@ -178,6 +178,13 @@ tr.me td { background: var(--accent-wash); }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
 input[type="search"] { min-width: 180px; flex: 1 1 180px; max-width: 280px; }
 .more { margin-top: 12px; }
+.rules { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
+.rules h3 { font-size: 15px; margin: 0 0 8px; }
+.rules p { margin: 0 0 8px; }
+.rules p.note { margin: 0 0 8px; }
+.rules ul { margin: 0; padding-left: 20px; }
+.rules li + li { margin-top: 4px; }
+.rules ul ul { margin-top: 4px; }
 footer { color: var(--muted); font-size: 13px; padding: 24px 0 40px; border-top: 1px solid var(--border); }
 footer a { color: var(--ink-2); }
 </style>
@@ -199,6 +206,7 @@ footer a { color: var(--ink-2); }
     <a href="#heatmap" data-view="heatmap">Heat map</a>
     <a href="#weekly" data-view="weekly">Weekly results</a>
     <a href="#players" data-view="players">Players</a>
+    <a href="#guidelines" data-view="guidelines">League Guidelines</a>
   </div>
 </nav>
 <main class="wrap">
@@ -244,6 +252,152 @@ footer a { color: var(--ink-2); }
     <div class="card scroll"><table id="players-table"></table></div>
     <div class="more"><button type="button" id="players-more" hidden>Show more</button></div>
     <p class="note" id="players-note"></p>
+  </section>
+
+  <section class="view" id="view-guidelines">
+    <h2>Dynasty League Guidelines</h2>
+    <div class="rules">
+      <div class="card">
+        <h3>1. Buy-In</h3>
+        <ul>
+          <li>Inaugural season: $50 / year with a two year commitment ($100 upfront)</li>
+          <li>There will be a yearly buy-in
+            <ul>
+              <li>Will vary, but will not go below $50 / year</li>
+              <li>Everyone keeps a continuous two year commitment</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>2. Opt-Out</h3>
+        <p>If you choose to opt-out of the league you have two options:</p>
+        <ul>
+          <li>Play-out the last year of your commitment (allows us time to find a replacement)</li>
+          <li>Completely opt-out and forfeit your buy-in for all committed years (minimum year two; year three, if applicable, pursuant of <em>Amendment #2</em>)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>3. Draft</h3>
+        <ul>
+          <li>Day: Monday, August 29th, 2022</li>
+          <li>Time: 6:30 pm</li>
+          <li>Format: Snake; 2 min / pick; 24 picks / person</li>
+          <li>Picks will be randomized 1 day before the draft</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>4. Rookie Draft</h3>
+        <ul>
+          <li>Drafts after inaugural year</li>
+          <li>Date and time to be chosen after the rookie draft</li>
+          <li>3 rounds
+            <ul>
+              <li>Round 1 selections will be 24 hours <em>(added 6/9/23)</em></li>
+              <li>Round 2 - 3 selections will be 12 hours <em>(added 6/9/23)</em></li>
+            </ul>
+          </li>
+        </ul>
+        <p class="note">See Amendment #1 for the current rookie draft timing.</p>
+      </div>
+      <div class="card">
+        <h3>5. Scoring</h3>
+        <ul>
+          <li>Half-PPR with a 0.5 reception premium for TEs</li>
+          <li>Everything else is standard scoring</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>6. Roster</h3>
+        <ul>
+          <li>QB: 1</li>
+          <li>RB: 2</li>
+          <li>WR: 2</li>
+          <li>TE: 1</li>
+          <li>Flex: 2</li>
+          <li>Superflex: 1</li>
+          <li>IR: 1</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>7. Trades</h3>
+        <ul>
+          <li>You can trade players &amp; draft picks</li>
+          <li>Trades process in 1 day, at the latest</li>
+          <li>I, as the commissioner, have final veto rights
+            <ul>
+              <li>Really only for people who have given up (hopefully, people aren’t doing this due to the 2-yr commitment)</li>
+              <li>If you want a trade vetoed, reach out to me</li>
+            </ul>
+          </li>
+          <li>Trade deadline is Week 12</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>8. Waivers</h3>
+        <ul>
+          <li>Worst team has the highest waiver priority</li>
+          <li>Waiver holds clear after Tuesday</li>
+          <li>Dropped players are on waivers for 1 day</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>9. Playoffs</h3>
+        <ul>
+          <li>8 teams make it</li>
+          <li>1 week / round</li>
+          <li>Championship is week 17</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>10. Winnings</h3>
+        <ul>
+          <li>1st Place: 75%</li>
+          <li>2nd Place: 16.67%</li>
+          <li>3rd Place: 8.33% (Buy-In Total)</li>
+          <li>Inaugural season winnings
+            <ul>
+              <li>1st: $450</li>
+              <li>2nd: $100</li>
+              <li>3rd: $50</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>Amendments</h2>
+    <div class="rules">
+      <div class="card">
+        <h3>Amendment #1 - Rookie Draft</h3>
+        <p class="note"><em>Added 06/09/2023; updated &amp; effective 01/07/2026</em></p>
+        <p>All rookie drafts going forward will have the following characteristics:</p>
+        <ul>
+          <li>Start at the conclusion of teams’ Mandatory Minicamps</li>
+          <li>Three rounds
+            <ul>
+              <li>1st round: 24 hours / pick</li>
+              <li>2nd round: 4 hours / pick</li>
+              <li>3rd round: 4 hours / pick</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Amendment #2 - Trading 1st Rounders</h3>
+        <p class="note"><em>Added 07/06/2023; effective 07/06/2023</em></p>
+        <p>Anyone who wishes to trade their 1st rounder must be paid up through that 1st rounder’s year.</p>
+        <ul>
+          <li>With the 24 month commitment, this only applies to the furthest out 1st rounder.</li>
+          <li>If no payment is made prior to the one day deadline for a trade, the trade will be vetoed.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Amendment #3 - Tanking Mitigation</h3>
+        <p class="note"><em>Added 11/28/2023; effective 09/07/2024</em></p>
+        <p>The rookie draft pick order for non-playoff teams will be determined by full-team season-long cumulative points.</p>
+      </div>
+    </div>
   </section>
 </main>
 <footer class="wrap">
