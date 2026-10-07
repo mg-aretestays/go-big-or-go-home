@@ -1,0 +1,6 @@
+# Private: spreadsheet (includes dues), its source link, and cached FantasyPros pages
+*.xlsx
+.source_sheet_url
+.fp_cache/
+__pycache__/
+.claude/

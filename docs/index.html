@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Go Big or Go Home 2026</title>
+<meta name="description" content="Standings, heat map, weekly results and player stats for the Go Big or Go Home Sleeper league.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏈</text></svg>">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f3f2ee;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #6f6d68;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --series-1: #2a78d6;
+  --other-line: #c3c2b7;
+  --div-pos: #2a78d6;
+  --div-neg: #e34948;
+  --div-mid: #f0efec;
+  --good: #006300;
+  --bad: #b42323;
+  --accent-wash: rgba(42, 120, 214, 0.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #9a988f;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --series-1: #3987e5;
+    --other-line: #4a4a46;
+    --div-pos: #3987e5;
+    --div-neg: #e66767;
+    --div-mid: #383835;
+    --good: #0ca30c;
+    --bad: #ef7b7b;
+    --accent-wash: rgba(57, 135, 229, 0.16);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #232321;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #9a988f;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --series-1: #3987e5;
+  --other-line: #4a4a46;
+  --div-pos: #3987e5;
+  --div-neg: #e66767;
+  --div-mid: #383835;
+  --good: #0ca30c;
+  --bad: #ef7b7b;
+  --accent-wash: rgba(57, 135, 229, 0.16);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page);
+  color: var(--ink);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  overflow-x: hidden;
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+header.top { padding-top: 24px; padding-bottom: 12px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; }
+.sub { color: var(--ink-2); margin-top: 2px; font-size: 14px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+label.inline { display: flex; gap: 6px; align-items: center; color: var(--ink-2); font-size: 13px; }
+select, input[type="search"], button {
+  font: inherit; font-size: 14px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 10px; min-height: 34px;
+}
+button { cursor: pointer; }
+button:hover, select:hover { background: var(--surface-2); }
+:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+
+nav.tabs { position: sticky; top: 0; z-index: 5; background: var(--page); border-bottom: 1px solid var(--border); }
+nav.tabs .wrap { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+nav.tabs a {
+  padding: 12px 14px; color: var(--ink-2); text-decoration: none; font-weight: 600; font-size: 14px;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+}
+nav.tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--series-1); }
+
+main { padding: 20px 0 48px; }
+section.view { display: none; }
+section.view.active { display: block; }
+h2 { font-size: 17px; margin: 28px 0 10px; }
+h2:first-child { margin-top: 0; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.tile { min-width: 0; }
+.tile .label { color: var(--ink-2); font-size: 13px; }
+.tile .value { font-size: clamp(20px, 5.5vw, 28px); font-weight: 700; margin: 2px 0; overflow-wrap: anywhere; }
+.tile .detail { color: var(--ink-2); font-size: 13px; }
+
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 8px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); }
+th { color: var(--ink-2); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
+th.l, td.l { text-align: left; }
+td { font-variant-numeric: tabular-nums; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--ink); }
+th[aria-sort="descending"]::after { content: " ↓"; }
+th[aria-sort="ascending"]::after { content: " ↑"; }
+tr.me td { background: var(--accent-wash); }
+.team-cell .h { font-weight: 600; }
+.team-cell .n { color: var(--ink-2); font-size: 12px; }
+.group-row th { border-bottom: 0; padding-bottom: 0; font-size: 11px; color: var(--muted); }
+.pos { color: var(--good); }
+.neg { color: var(--bad); }
+.fa { color: var(--good); font-weight: 600; }
+.bar-cell { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.mini-bar { position: relative; width: 60px; height: 8px; }
+.mini-bar::before { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--axis); }
+.mini-bar span { position: absolute; top: 0; height: 8px; border-radius: 2px; }
+
+.chart-box { position: relative; }
+.chart-box svg { display: block; width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+.legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+.tooltip {
+  position: absolute; pointer-events: none; z-index: 4; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 170px; display: none;
+}
+.tooltip .t { font-weight: 700; margin-bottom: 4px; }
+.tooltip .r { display: flex; justify-content: space-between; gap: 12px; }
+.tooltip .r span:last-child { font-variant-numeric: tabular-nums; }
+
+.heat td.cell { text-align: center; padding: 0; min-width: 44px; height: 38px; font-weight: 600; position: relative; cursor: default; }
+.heat td.cell .g { position: absolute; top: 1px; right: 3px; font-size: 10px; }
+.heat td.empty { color: var(--muted); font-weight: 400; }
+.heat th.l, .heat td.l { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+.heat tr.me th.l, .heat tr.me td.l { box-shadow: inset 3px 0 0 var(--series-1); }
+@media (max-width: 600px) { .heat .team-cell .n { display: none; } }
+.scale { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); flex-wrap: wrap; }
+.scale .ramp { width: 160px; height: 10px; border-radius: 3px; background: linear-gradient(90deg, var(--div-pos), var(--div-mid), var(--div-neg)); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chips button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.matchups { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.matchup .side { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 0; }
+.matchup .side + .side { border-top: 1px solid var(--grid); }
+.matchup .score { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.matchup .side.loser .score, .matchup .side.loser .h { color: var(--ink-2); font-weight: 500; }
+.matchup .meta { color: var(--muted); font-size: 12px; margin-top: 6px; }
+.matchup.me { outline: 2px solid var(--series-1); }
+.badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); margin-left: 6px; vertical-align: 1px; }
+.badge.w { background: var(--ink); color: var(--surface); }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+input[type="search"] { min-width: 180px; flex: 1 1 180px; max-width: 280px; }
+.more { margin-top: 12px; }
+footer { color: var(--muted); font-size: 13px; padding: 24px 0 40px; border-top: 1px solid var(--border); }
+footer a { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<header class="wrap top">
+  <div>
+    <h1 id="title">Go Big or Go Home</h1>
+    <div class="sub" id="subtitle">Loading…</div>
+  </div>
+  <div class="controls">
+    <label class="inline">Highlight <select id="team-pick" aria-label="Highlight a team"></select></label>
+    <button id="theme" type="button" aria-label="Color theme">Theme: auto</button>
+  </div>
+</header>
+<nav class="tabs" aria-label="Sections">
+  <div class="wrap">
+    <a href="#overview" data-view="overview">Overview</a>
+    <a href="#heatmap" data-view="heatmap">Heat map</a>
+    <a href="#weekly" data-view="weekly">Weekly results</a>
+    <a href="#players" data-view="players">Players</a>
+  </div>
+</nav>
+<main class="wrap">
+  <section class="view" id="view-overview">
+    <div class="tiles" id="tiles"></div>
+    <h2>Standings</h2>
+    <div class="card scroll"><table id="standings"></table></div>
+    <p class="note">All-play = record if you played every team every week. Expected wins = all-play win rate × games played. Luck = +1 for a win while scoring in the bottom half, −1 for a loss while scoring in the top half.</p>
+    <h2>Points by week</h2>
+    <div class="card">
+      <div class="chart-box" id="trend"></div>
+      <div class="legend" id="trend-legend"></div>
+      <p class="note"><button type="button" id="trend-table-toggle">Show as table</button></p>
+      <div class="scroll" id="trend-table" hidden></div>
+    </div>
+  </section>
+
+  <section class="view" id="view-heatmap">
+    <h2>Weekly scoring rank</h2>
+    <div class="scale" style="margin-bottom:12px"><span>1st</span><span class="ramp"></span><span>12th</span>
+      <span style="margin-left:12px">▲ won while in bottom half</span><span>▼ lost while in top half</span></div>
+    <div class="card scroll"><table class="heat" id="heat"></table></div>
+    <p class="note">Each cell is that team's scoring rank among all 12 teams that week. Hover or tap a cell for the score and result.</p>
+  </section>
+
+  <section class="view" id="view-weekly">
+    <div class="chips" id="week-chips" role="group" aria-label="Week"></div>
+    <div class="tiles" id="week-tiles" style="margin-bottom:16px"></div>
+    <div class="matchups" id="matchups"></div>
+  </section>
+
+  <section class="view" id="view-players">
+    <div class="filters">
+      <div class="seg" id="pos-seg" role="group" aria-label="Position"></div>
+      <div class="seg" id="mode-seg" role="group" aria-label="View">
+        <button type="button" data-mode="season">Season</button>
+        <button type="button" data-mode="weekly">Weekly</button>
+      </div>
+      <select id="week-pick" aria-label="Week"></select>
+      <select id="owner-pick" aria-label="Owner"></select>
+      <input type="search" id="player-search" placeholder="Search players" aria-label="Search players">
+    </div>
+    <div class="card scroll"><table id="players-table"></table></div>
+    <div class="more"><button type="button" id="players-more" hidden>Show more</button></div>
+    <p class="note" id="players-note"></p>
+  </section>
+</main>
+<footer class="wrap">
+  League data from <a href="https://sleeper.com">Sleeper</a>. Player stats from <a href="https://www.fantasypros.com/nfl/stats/qb.php">FantasyPros</a> (half PPR).
+  Updated automatically every Tuesday. <span id="updated"></span>
+</footer>
+<div class="tooltip" id="tip" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
