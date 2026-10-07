@@ -75,7 +75,7 @@ function setTeam(rid) {
   state.team = rid;
   store.set("team", rid);
   $("#team-pick").value = rid;
-  renderStandings(); renderTrend(); renderHeat(); renderWeekly();
+  renderStandings(); renderTrend(); renderHeat(); renderWeekly(); renderPlayers();
 }
 
 /* ---------- overview ---------- */
