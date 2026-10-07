@@ -25,11 +25,11 @@ def main():
         team_rows.append({
             "rid": t["rid"], "handle": t["handle"], "name": t["team_name"], "place": t["place"],
             "w": t["w"], "l": t["l"], "t": t["t"], "pf": t["pf"], "pa": t["pa"],
-            "pfAvg": t["pf_avg"], "paAvg": t["pa_avg"], "diffAvg": t["diff_avg"],
+            "maxPf": t["max_pf"], "pfEff": t["pf_eff"], "pfAvg": t["pf_avg"], "paAvg": t["pa_avg"], "diffAvg": t["diff_avg"],
             "pfRank": t["pf_rank"], "paRank": t["pa_rank"],
             "apW": t["ap_w"], "apL": t["ap_l"], "expW": t["exp_w"],
             "luck": t["luck"], "topHalf": t["top_half"],
-            "games": {str(wk): {"pts": g["pts"], "opp": g["opp"], "oppPts": g["opp_pts"],
+            "games": {str(wk): {"pts": g["pts"], "maxPts": g["max_pts"], "opp": g["opp"], "oppPts": g["opp_pts"],
                                 "result": g["result"], "rank": g["rank"], "oppRank": g["opp_rank"],
                                 "luck": t["luck_events"].get(wk)}
                       for wk, g in t["games"].items()},

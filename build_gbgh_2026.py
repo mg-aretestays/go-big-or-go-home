@@ -11,6 +11,7 @@ import json
 import re
 import time
 import urllib.request
+from functools import lru_cache
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -52,6 +53,35 @@ def api(path):
         return json.load(r)
 
 
+@lru_cache(maxsize=1)
+def nfl_players():
+    return api("players/nfl")
+
+
+FLEX_SLOTS = {"FLEX": {"RB", "WR", "TE"}, "SUPER_FLEX": {"QB", "RB", "WR", "TE"}}
+
+
+def max_points(roster_positions, players_points):
+    """Best possible lineup score from everyone on the roster that week.
+
+    Fixed positions are filled first (best player at each), then the narrower flex
+    slots before the wider ones, so the greedy pick is optimal.
+    """
+    nfl = nfl_players()
+    pool = sorted(((pts or 0, (nfl.get(pid) or {}).get("position")) for pid, pts in players_points.items()),
+                  reverse=True)
+    slots = [s for s in roster_positions if s != "BN"]
+    slots.sort(key=lambda s: len(FLEX_SLOTS.get(s, ())))  # fixed slots (0) first, SUPER_FLEX last
+    total = 0.0
+    for slot in slots:
+        eligible = FLEX_SLOTS.get(slot, {slot})
+        pick = next((p for p in pool if p[1] in eligible), None)
+        if pick:
+            total += pick[0]
+            pool.remove(pick)
+    return round(total, 2)
+
+
 def comp_rank(values):
     """1 = highest. Ties share the better rank."""
     return [1 + sum(o > v for o in values) for v in values]
@@ -81,6 +111,7 @@ def load_season(weeks_override):
     for w in weeks:
         rows = [m for m in api(f"league/{LEAGUE_ID}/matchups/{w}") if m.get("matchup_id")]
         pts = {m["roster_id"]: round(m["points"] or 0, 2) for m in rows}
+        max_pts = {m["roster_id"]: max_points(league["roster_positions"], m["players_points"] or {}) for m in rows}
         ids = list(pts)
         ranks = dict(zip(ids, comp_rank([pts[i] for i in ids])))
         by_match = {}
@@ -90,7 +121,7 @@ def load_season(weeks_override):
             for me, opp in ((a, b), (b, a)):
                 res = "Win" if pts[me] > pts[opp] else "Loss" if pts[me] < pts[opp] else "Tie"
                 teams[me]["games"][w] = {
-                    "pts": pts[me], "opp": opp, "opp_pts": pts[opp], "result": res,
+                    "pts": pts[me], "max_pts": max(max_pts[me], pts[me]), "opp": opp, "opp_pts": pts[opp], "result": res,
                     "rank": ranks[me], "opp_rank": ranks[opp],
                     "allplay_w": sum(pts[me] > pts[o] for o in ids if o != me),
                     "allplay_l": sum(pts[me] < pts[o] for o in ids if o != me),
@@ -104,6 +135,8 @@ def load_season(weeks_override):
         t["t"] = sum(x["result"] == "Tie" for x in g)
         t["pf"] = round(sum(x["pts"] for x in g), 2)
         t["pa"] = round(sum(x["opp_pts"] for x in g), 2)
+        t["max_pf"] = round(sum(x["max_pts"] for x in g), 2)
+        t["pf_eff"] = round(t["pf"] / t["max_pf"] * 100, 1) if t["max_pf"] else 0
         gp = max(len(t["games"]), 1)
         t["pf_avg"] = round(t["pf"] / gp, 2)
         t["pa_avg"] = round(t["pa"] / gp, 2)
@@ -470,7 +503,7 @@ def _norm(name):
 
 def league_owners(teams):
     """Map (normalized name, position) -> list of (nfl team, owner handle) for rostered players."""
-    players = api("players/nfl")
+    players = nfl_players()
     owners = {}
     for r in api(f"league/{LEAGUE_ID}/rosters"):
         handle = teams[r["roster_id"]]["handle"]

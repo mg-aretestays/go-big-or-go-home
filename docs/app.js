@@ -110,6 +110,8 @@ const STANDING_COLS = [
   { key: "team", label: "Team", l: true, get: t => t.handle.toLowerCase(), render: t => teamCell(t) },
   { key: "w", label: "W-L", get: t => t.w + t.t / 2, render: t => `${t.w}-${t.l}${t.t ? "-" + t.t : ""}` },
   { key: "pf", label: "PF", get: t => t.pf, render: t => fmt(t.pf) },
+  { key: "maxPf", label: "Max PF", get: t => t.maxPf, render: t => fmt(t.maxPf) },
+  { key: "pfEff", label: "PF % of max", get: t => t.pfEff, render: t => fmt(t.pfEff, 1) + "%" },
   { key: "pfAvg", label: "PF/G", get: t => t.pfAvg, render: t => fmt(t.pfAvg) },
   { key: "pa", label: "PA", get: t => t.pa, render: t => fmt(t.pa) },
   { key: "paAvg", label: "PA/G", get: t => t.paAvg, render: t => fmt(t.paAvg) },
