@@ -4,7 +4,7 @@ Standings, scoring heat map, weekly results and player stats for the Go Big or G
 
 - **Live page:** served by GitHub Pages from `docs/`.
 - **Data:** league results from the [Sleeper API](https://docs.sleeper.com/); player stats from [FantasyPros](https://www.fantasypros.com/nfl/stats/qb.php) (half PPR; TEs full PPR, matching the league's 0.5 TE reception bonus).
-- **Updates:** `.github/workflows/update-data.yml` runs `export_site_data.py` every Tuesday morning and commits `docs/data.json`. Use **Actions → Update league data → Run workflow** to refresh by hand.
+- **Updates:** `.github/workflows/update-data.yml` runs `export_site_data.py` every Tuesday morning (after Monday Night Football) and again Friday morning (to pick up NFL stat corrections), and commits `docs/data.json`. Use **Actions → Update league data → Run workflow** to refresh by hand.
 
 Local use:
 

@@ -2,7 +2,9 @@ name: Update league data
 
 on:
   schedule:
-    - cron: "0 11 * * 2"  # Tuesdays 11:00 UTC (6-7am ET), after Monday Night Football
+    # Off the top of the hour: GitHub delays or drops scheduled runs at :00 when it is busy.
+    - cron: "17 11 * * 2"  # Tuesdays 11:17 UTC (5-6am CT), after Monday Night Football
+    - cron: "17 11 * * 5"  # Fridays 11:17 UTC, picks up the week's NFL stat corrections
   workflow_dispatch:      # "Run workflow" button for a manual refresh
 
 permissions:
