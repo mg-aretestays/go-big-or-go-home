@@ -3,8 +3,12 @@ name: Update league data
 on:
   schedule:
     # Off the top of the hour: GitHub delays or drops scheduled runs at :00 when it is busy.
+    # GitHub can still drop a run, so each day has backups; a run with no new data commits nothing.
     - cron: "17 11 * * 2"  # Tuesdays 11:17 UTC (5-6am CT), after Monday Night Football
+    - cron: "43 15 * * 2"  # Tuesday backup
+    - cron: "7 20 * * 2"   # Tuesday backup
     - cron: "17 11 * * 5"  # Fridays 11:17 UTC, picks up the week's NFL stat corrections
+    - cron: "37 17 * * 5"  # Friday backup
   workflow_dispatch:      # "Run workflow" button for a manual refresh
     inputs:
       test_failure_alert:
