@@ -6,9 +6,15 @@ on:
     - cron: "17 11 * * 2"  # Tuesdays 11:17 UTC (5-6am CT), after Monday Night Football
     - cron: "17 11 * * 5"  # Fridays 11:17 UTC, picks up the week's NFL stat corrections
   workflow_dispatch:      # "Run workflow" button for a manual refresh
+    inputs:
+      test_failure_alert:
+        description: "Fail on purpose to test the failure email"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
+  issues: write   # open an issue when the update fails
 
 concurrency: update-data
 
@@ -16,6 +22,9 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
+      - name: Fail on purpose (test run)
+        if: inputs.test_failure_alert
+        run: exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -34,3 +43,22 @@ jobs:
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           git add docs/data.json
           git diff --cached --quiet || { git commit -m "Update league data"; git push; }
+
+      # GitHub's own failure email goes to whoever last edited the cron line,
+      # so open an issue assigned to the repo owner instead, which notifies them directly.
+      - name: Open an issue if the update failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TEST: ${{ inputs.test_failure_alert }}
+        run: |
+          title="League data update failed"
+          note="The ${{ github.event_name }} run failed: $RUN_URL"
+          [ "$TEST" = "true" ] && note="Test alert, safe to close. $note"
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "@${{ github.repository_owner }} $note"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --assignee "${{ github.repository_owner }}" --body "@${{ github.repository_owner }} $note"
+          fi
