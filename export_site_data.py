@@ -57,6 +57,15 @@ def main():
         "teams": team_rows,
         "players": players,
     }
+    # Leave the file alone when only the timestamp would change, so backup runs commit nothing.
+    if OUT.exists():
+        old = json.loads(OUT.read_text(encoding="utf-8"))
+        new = json.loads(json.dumps(data))
+        old["league"].pop("updated", None)
+        new["league"].pop("updated", None)
+        if old == new:
+            print(f"{OUT} already current (weeks {weeks[0]}-{weeks[-1]})")
+            return
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(json.dumps(data, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
     print(f"Wrote {OUT} ({OUT.stat().st_size // 1024} KB, weeks {weeks[0]}-{weeks[-1]})")
