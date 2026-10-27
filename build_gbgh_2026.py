@@ -12,7 +12,6 @@ import re
 import time
 import urllib.request
 from functools import lru_cache
-from html.parser import HTMLParser
 from pathlib import Path
 
 from openpyxl import Workbook, load_workbook
@@ -383,52 +382,27 @@ def build_payments(wb, order):
         ws.column_dimensions[get_column_letter(col)].width = 15
 
 
-class _StatsTable(HTMLParser):
-    """Pulls the #data table off a FantasyPros stats page."""
+FP_CONFIG_MARKER = "window.FP.reportConfig = "
 
-    def __init__(self):
-        super().__init__()
-        self.in_table = False
-        self.groups, self.cols, self.rows = [], [], []
-        self.section = None  # 'tier' | 'head' | 'body'
-        self.cell, self.row, self.fp_id, self.colspan = None, None, None, 1
 
-    def handle_starttag(self, tag, attrs):
-        a = dict(attrs)
-        if tag == "table" and a.get("id") == "data":
-            self.in_table = True
-        if not self.in_table:
-            return
-        if tag == "tr":
-            cls = a.get("class") or ""
-            self.section = "tier" if "tier-row" in cls else ("body" if "mpb-player" in cls else "head")
-            self.fp_id = cls.replace("mpb-player-", "") if self.section == "body" else None
-            self.row = []
-        elif tag in ("td", "th"):
-            self.cell, self.colspan = "", int(a.get("colspan", 1))
+def parse_stats_page(html):
+    """Return (cols, rows) from a FantasyPros stats page, or None if it is not the current JSON format.
 
-    def handle_data(self, data):
-        if self.in_table and self.cell is not None:
-            self.cell += data
-
-    def handle_endtag(self, tag):
-        if not self.in_table:
-            return
-        if tag in ("td", "th") and self.cell is not None:
-            text = " ".join(self.cell.split())
-            if self.section == "tier":
-                self.groups += [text] * self.colspan
-            else:
-                self.row.append(text)
-            self.cell = None
-        elif tag == "tr" and self.row is not None:
-            if self.section == "head" and self.row:
-                self.cols = self.row
-            elif self.section == "body":
-                self.rows.append((self.fp_id, self.row))
-            self.row = None
-        elif tag == "table":
-            self.in_table = False
+    cols is [(group, name)...] (Rank, Player, FPTS/G and ROST dropped); rows is [(fp_id, player, team, stats)...].
+    """
+    i = html.find(FP_CONFIG_MARKER)
+    if i < 0:
+        return None
+    table = json.JSONDecoder().raw_decode(html[i + len(FP_CONFIG_MARKER):])[0]["table"]
+    groups = [g["label"] for g in table["headerGroups"] for _ in range(g["colspan"])]
+    fields = list(zip(groups, table["fields"]))[2:]  # first two are Rank, Player
+    keep = [(g, f) for g, f in fields if f["label"] not in ("FPTS/G", "ROST")]
+    cols = [(g, f["label"]) for g, f in keep]
+    rows = []
+    for r in table["rows"]:
+        stats = {c: _num(r.get(f["key"])) for c, (_, f) in zip(cols, keep)}
+        rows.append((str(r["player"]["id"]), r["player"]["name"], r["player"].get("team") or "FA", stats))
+    return cols, rows
 
 
 def fp_page(pos, week, last_week):
@@ -437,7 +411,9 @@ def fp_page(pos, week, last_week):
     scoring = FP_SCORING[pos]
     path = FP_CACHE / f"{pos.lower()}_{scoring.lower()}_w{week:02d}.html"
     if path.exists() and week <= last_week - FP_REFRESH_WEEKS:
-        return path.read_text(encoding="utf-8")
+        cached = path.read_text(encoding="utf-8")
+        if FP_CONFIG_MARKER in cached:  # pages cached in the old HTML-table format are re-downloaded
+            return cached
     time.sleep(FP_CRAWL_DELAY)
     url = (f"https://www.fantasypros.com/nfl/stats/{pos.lower()}.php"
            f"?year={SEASON}&range=week&week={week}&scoring={scoring}")
@@ -460,12 +436,9 @@ def fp_page(pos, week, last_week):
 
 
 def _num(v):
-    v = v.replace(",", "").rstrip("%")
-    try:
-        f = float(v)
-        return int(f) if f.is_integer() else f
-    except ValueError:
-        return v
+    if isinstance(v, (int, float)):
+        return int(v) if float(v).is_integer() else v
+    return v
 
 
 def load_fantasypros(weeks):
@@ -474,16 +447,11 @@ def load_fantasypros(weeks):
     for pos in FP_POSITIONS:
         cols, rows = None, []
         for wk in weeks:
-            p = _StatsTable()
-            p.feed(fp_page(pos, wk, weeks[-1]))
-            groups = [""] * 2 + p.groups[2:]  # Rank, Player have no group
-            names = list(zip(groups, p.cols))
-            keep = [i for i, (_, n) in enumerate(names) if i >= 2 and n not in ("FPTS/G", "ROST")]
-            cols = [names[i] for i in keep]
-            for fp_id, cells in p.rows:
-                m = re.match(r"(.+?)\s*\((\w+)\)$", cells[1])
-                player, team = (m.group(1), m.group(2)) if m else (cells[1], "FA")
-                stats = {names[i]: _num(cells[i]) for i in keep}
+            parsed = parse_stats_page(fp_page(pos, wk, weeks[-1]))
+            if parsed is None:
+                raise RuntimeError(f"FantasyPros {pos} week {wk}: stats table not found (page format changed?)")
+            cols = parsed[0]
+            for fp_id, player, team, stats in parsed[1]:
                 if not stats.get(("MISC", "G")):
                     continue
                 rows.append({"fp_id": fp_id, "week": wk, "player": player, "team": team, "stats": stats})
